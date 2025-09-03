@@ -45,6 +45,12 @@ const EmailList = ({ searchQuery, refreshFolders }) => {
   };
 
 const handleEmailClick = async (email) => {
+    // If in drafts folder, navigate to edit draft instead of viewing
+    if (folder === "drafts") {
+      navigate(`/compose/draft/${email.Id}`);
+      return;
+    }
+
     if (!email.isRead) {
       try {
         await emailService.markAsRead(email.Id);
@@ -60,6 +66,11 @@ const handleEmailClick = async (email) => {
       }
     }
     navigate(`/email/${email.Id}`);
+  };
+
+  const handleEditDraft = (emailId, e) => {
+    e.stopPropagation();
+    navigate(`/compose/draft/${emailId}`);
   };
 
 const handleToggleStar = async (emailId) => {
@@ -301,16 +312,29 @@ onChange={(e) => handleSelectEmail(email.Id, e.target.checked)}
                     </div>
                     
 <div className="flex items-center gap-2 sm:gap-3 flex-shrink-0">
-<span className="text-sm text-gray-600 hidden sm:block">
+                      <span className="text-sm text-gray-600 hidden sm:block">
                         {formatTimestamp(email.timestamp)}
                       </span>
-                      <div className="opacity-0 group-hover:opacity-100 transition-opacity duration-200">
-                        <EmailActions
-                          email={email}
-                          onToggleStar={handleToggleStar}
-                          onDelete={handleDelete}
-                          compact
-                        />
+                      <div className="flex items-center gap-1">
+                        {folder === "drafts" && (
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            icon="Edit"
+                            onClick={(e) => handleEditDraft(email.Id, e)}
+                            className="opacity-0 group-hover:opacity-100 transition-opacity duration-200"
+                          >
+                            Edit
+                          </Button>
+                        )}
+                        <div className="opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+                          <EmailActions
+                            email={email}
+                            onToggleStar={handleToggleStar}
+                            onDelete={handleDelete}
+                            compact
+                          />
+                        </div>
                       </div>
                     </div>
                   </div>

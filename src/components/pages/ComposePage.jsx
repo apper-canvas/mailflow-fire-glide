@@ -1,9 +1,10 @@
 import React from "react";
-import { useLocation } from "react-router-dom";
+import { useLocation, useParams } from "react-router-dom";
 import EmailComposer from "@/components/organisms/EmailComposer";
 
 const ComposePage = () => {
   const location = useLocation();
+  const { draftId } = useParams();
   const { replyTo, forwardEmail } = location.state || {};
 
   return (

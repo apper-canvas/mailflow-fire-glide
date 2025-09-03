@@ -1,11 +1,11 @@
-import React, { useState, useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { toast } from "react-toastify";
-import ApperIcon from "@/components/ApperIcon";
-import Button from "@/components/atoms/Button";
-import Input from "@/components/atoms/Input";
-import emailService from "@/services/api/emailService";
 import { cn } from "@/utils/cn";
+import emailService from "@/services/api/emailService";
+import ApperIcon from "@/components/ApperIcon";
+import Input from "@/components/atoms/Input";
+import Button from "@/components/atoms/Button";
 const EmailComposer = ({ replyTo, forwardEmail, onClose }) => {
   const [formData, setFormData] = useState({
     to: "",
@@ -14,16 +14,42 @@ const EmailComposer = ({ replyTo, forwardEmail, onClose }) => {
     subject: "",
     body: ""
   });
-  const [showCc, setShowCc] = useState(false);
+const [showCc, setShowCc] = useState(false);
   const [showBcc, setShowBcc] = useState(false);
-const [sending, setSending] = useState(false);
+  const [sending, setSending] = useState(false);
   const [saving, setSaving] = useState(false);
   const [showDiscardModal, setShowDiscardModal] = useState(false);
   const { draftId } = useParams();
   const navigate = useNavigate();
+const [loadingDraft, setLoadingDraft] = useState(false);
+  const [draftError, setDraftError] = useState("");
+
+  const loadDraft = async () => {
+    if (!draftId) return;
+    
+    try {
+      setLoadingDraft(true);
+      setDraftError("");
+      const draft = await emailService.getById(draftId);
+      
+      setFormData({
+        to: Array.isArray(draft.to) ? draft.to.join(", ") : draft.to || "",
+        cc: Array.isArray(draft.cc) ? draft.cc.join(", ") : draft.cc || "",
+        bcc: Array.isArray(draft.bcc) ? draft.bcc.join(", ") : draft.bcc || "",
+        subject: draft.subject || "",
+        body: draft.body || ""
+      });
+    } catch (err) {
+      setDraftError("Failed to load draft");
+      toast.error("Failed to load draft");
+      console.error("Error loading draft:", err);
+    } finally {
+      setLoadingDraft(false);
+    }
+  };
 
   useEffect(() => {
-if (replyTo) {
+    if (replyTo) {
       setFormData({
         to: replyTo.from,
         cc: "",
@@ -44,22 +70,6 @@ if (replyTo) {
     }
   }, [replyTo, forwardEmail, draftId]);
 
-  const loadDraft = async () => {
-    try {
-const draft = await emailService.getById(draftId);
-      setFormData({
-        to: Array.isArray(draft.to) ? draft.to.join(", ") : draft.to,
-        cc: Array.isArray(draft.cc) ? draft.cc.join(", ") : draft.cc || "",
-        bcc: Array.isArray(draft.bcc) ? draft.bcc.join(", ") : draft.bcc || "",
-        subject: draft.subject,
-        body: draft.body
-      });
-      if (draft.cc) setShowCc(true);
-      if (draft.bcc) setShowBcc(true);
-    } catch (err) {
-      toast.error("Failed to load draft");
-    }
-  };
 
   const handleChange = (field, value) => {
     setFormData(prev => ({ ...prev, [field]: value }));
@@ -77,8 +87,8 @@ const draft = await emailService.getById(draftId);
     }
 
     setSending(true);
-    try {
-await emailService.create({
+try {
+      await emailService.create({
         to: parseEmails(formData.to),
         cc: parseEmails(formData.cc),
         bcc: parseEmails(formData.bcc),
@@ -106,16 +116,28 @@ await emailService.create({
     }
   };
 
-  const handleSaveDraft = async () => {
+const handleSaveDraft = async () => {
     setSaving(true);
     try {
-await emailService.saveDraft({
-        to: parseEmails(formData.to),
-        cc: parseEmails(formData.cc),
-        bcc: parseEmails(formData.bcc),
-        subject: formData.subject,
-        body: formData.body
-      });
+      if (draftId) {
+        // Update existing draft
+        await emailService.update(draftId, {
+          to: parseEmails(formData.to),
+          cc: parseEmails(formData.cc),
+          bcc: parseEmails(formData.bcc),
+          subject: formData.subject,
+          body: formData.body
+        });
+      } else {
+        // Create new draft
+        await emailService.saveDraft({
+          to: parseEmails(formData.to),
+          cc: parseEmails(formData.cc),
+          bcc: parseEmails(formData.bcc),
+          subject: formData.subject,
+          body: formData.body
+        });
+      }
       toast.success("Draft saved");
     } catch (err) {
       toast.error("Failed to save draft");
@@ -123,7 +145,6 @@ await emailService.saveDraft({
       setSaving(false);
     }
   };
-
 const handleDiscard = () => {
     setShowDiscardModal(true);
   };
@@ -138,8 +159,8 @@ const handleDiscard = () => {
     setShowDiscardModal(false);
   };
 
-  return (
-<div className="bg-white h-full flex flex-col overflow-hidden">
+return (
+    <div className="bg-white h-full flex flex-col overflow-hidden">
       <div className="border-b border-gray-200 p-4">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
@@ -169,14 +190,13 @@ const handleDiscard = () => {
           </div>
         </div>
       </div>
-
 <div className="flex-1 flex flex-col overflow-hidden min-h-0">
         <div className="p-4 space-y-4 border-b border-gray-200">
           <div className="space-y-3">
             <div className="flex items-center gap-2">
               <label className="text-sm font-medium text-gray-700 w-12">To:</label>
-              <Input
-value={formData.to}
+<Input
+                value={formData.to}
                 onChange={(e) => handleChange("to", e.target.value)}
                 placeholder="Recipients"
                 className="flex-1"
@@ -236,7 +256,6 @@ value={formData.to}
             </div>
           </div>
         </div>
-
 <div className="flex-1 p-3 sm:p-4 min-h-0">
           <textarea
             value={formData.body}
@@ -245,7 +264,6 @@ value={formData.to}
             className="w-full h-full resize-none border-none outline-none text-sm leading-relaxed email-editor"
           />
         </div>
-
 <div className="border-t border-gray-200 p-3 sm:p-4 flex-shrink-0">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
             <div className="flex items-center gap-2">
@@ -275,8 +293,8 @@ value={formData.to}
               Discard
             </Button>
           </div>
-        </div>
 </div>
+      </div>
 
       {/* Discard Confirmation Modal */}
       {showDiscardModal && (
