@@ -8,6 +8,7 @@ import Input from "@/components/atoms/Input";
 import Button from "@/components/atoms/Button";
 const EmailComposer = ({ replyTo, forwardEmail, onClose }) => {
   const [formData, setFormData] = useState({
+from: "me@mailflow.com",
     to: "",
     cc: "",
     bcc: "",
@@ -32,7 +33,8 @@ const [loadingDraft, setLoadingDraft] = useState(false);
       setDraftError("");
       const draft = await emailService.getById(draftId);
       
-      setFormData({
+setFormData({
+        from: draft.from || "me@mailflow.com",
         to: Array.isArray(draft.to) ? draft.to.join(", ") : draft.to || "",
         cc: Array.isArray(draft.cc) ? draft.cc.join(", ") : draft.cc || "",
         bcc: Array.isArray(draft.bcc) ? draft.bcc.join(", ") : draft.bcc || "",
@@ -50,7 +52,8 @@ const [loadingDraft, setLoadingDraft] = useState(false);
 
   useEffect(() => {
     if (replyTo) {
-      setFormData({
+setFormData({
+        from: "me@mailflow.com",
         to: replyTo.from,
         cc: "",
         bcc: "",
@@ -58,7 +61,8 @@ const [loadingDraft, setLoadingDraft] = useState(false);
         body: `\n\n--- Original Message ---\nFrom: ${replyTo.fromName} <${replyTo.from}>\nDate: ${new Date(replyTo.timestamp).toLocaleString()}\nSubject: ${replyTo.subject}\n\n${replyTo.body}`
       });
     } else if (forwardEmail) {
-      setFormData({
+setFormData({
+        from: "me@mailflow.com",
         to: "",
         cc: "",
         bcc: "",
@@ -88,7 +92,8 @@ const [loadingDraft, setLoadingDraft] = useState(false);
 
     setSending(true);
 try {
-      await emailService.create({
+await emailService.create({
+        from: formData.from,
         to: parseEmails(formData.to),
         cc: parseEmails(formData.cc),
         bcc: parseEmails(formData.bcc),
@@ -122,6 +127,7 @@ const handleSaveDraft = async () => {
       if (draftId) {
         // Update existing draft
         await emailService.update(draftId, {
+from: formData.from,
           to: parseEmails(formData.to),
           cc: parseEmails(formData.cc),
           bcc: parseEmails(formData.bcc),
@@ -193,6 +199,16 @@ return (
 <div className="flex-1 flex flex-col overflow-hidden min-h-0">
         <div className="p-4 space-y-4 border-b border-gray-200">
           <div className="space-y-3">
+            <div className="flex items-center gap-2">
+              <label className="text-sm font-medium text-gray-700 w-12">From:</label>
+              <Input
+                value={formData.from}
+                onChange={(e) => handleChange("from", e.target.value)}
+                placeholder="Sender email address"
+                className="flex-1"
+              />
+            </div>
+
             <div className="flex items-center gap-2">
               <label className="text-sm font-medium text-gray-700 w-12">To:</label>
 <Input

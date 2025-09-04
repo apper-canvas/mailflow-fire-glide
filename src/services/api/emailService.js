@@ -284,7 +284,7 @@ const emailService = {
       // Transform to database field format
       const dbData = {
         Name: emailData.subject || "New Email",
-        from_c: "me@mailflow.com",
+from_c: emailData.from || "me@mailflow.com",
         from_name_c: "Me",
         to_c: Array.isArray(emailData.to) ? emailData.to.join(", ") : (emailData.to || ""),
         cc_c: Array.isArray(emailData.cc) ? emailData.cc.join(", ") : (emailData.cc || ""),
@@ -359,16 +359,15 @@ const emailService = {
       const dbUpdates = {
         Id: parseInt(id)
       };
-      
-      if (updates.hasOwnProperty('isRead')) dbUpdates.is_read_c = updates.isRead;
+if (updates.hasOwnProperty('isRead')) dbUpdates.is_read_c = updates.isRead;
       if (updates.hasOwnProperty('isStarred')) dbUpdates.is_starred_c = updates.isStarred;
       if (updates.hasOwnProperty('folder')) dbUpdates.folder_c = updates.folder;
       if (updates.hasOwnProperty('subject')) dbUpdates.subject_c = updates.subject;
       if (updates.hasOwnProperty('body')) dbUpdates.body_c = updates.body;
+      if (updates.hasOwnProperty('from')) dbUpdates.from_c = updates.from;
       if (updates.hasOwnProperty('to')) dbUpdates.to_c = Array.isArray(updates.to) ? updates.to.join(", ") : updates.to;
       if (updates.hasOwnProperty('cc')) dbUpdates.cc_c = Array.isArray(updates.cc) ? updates.cc.join(", ") : updates.cc;
       if (updates.hasOwnProperty('bcc')) dbUpdates.bcc_c = Array.isArray(updates.bcc) ? updates.bcc.join(", ") : updates.bcc;
-      
       const params = {
         records: [dbUpdates]
       };
@@ -483,6 +482,7 @@ const emailService = {
 
       if (existingDraft) {
         return this.update(existingDraft.Id, {
+from: draftData.from || "me@mailflow.com",
           to: draftData.to || [],
           cc: draftData.cc || [],
           bcc: draftData.bcc || [],
@@ -490,7 +490,8 @@ const emailService = {
           body: draftData.body || ""
         });
       } else {
-        return this.create({
+return this.create({
+          from: draftData.from || "me@mailflow.com",
           ...draftData,
           folder: "drafts"
         });
